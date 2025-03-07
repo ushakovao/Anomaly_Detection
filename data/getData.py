@@ -10,9 +10,14 @@ ALPHA_VANTAGE_API_KEY = "ADP45J3Q2C9U3FUE"
 
 # --- 1. Yahoo Finance Data ---
 def get_yahoo_finance_data():
+
     gme_data = yf.download("GME", start="2020-01-01", end="2021-12-31", interval="1d")
-    gme_data.to_csv("GME_yahoo_data.csv")
+    gme_data.columns = [col[0] for col in gme_data.columns]
+    gme_data.reset_index(inplace=True)
+    gme_data.to_csv("GME_yahoo_data.csv", index=False)
+
     print("Yahoo Finance Data Collected")
+    print("Columns in gme_yahoo:", gme_data.columns)
     return gme_data
 
 
@@ -25,8 +30,12 @@ def get_alpha_vantage_data():
     data = response.json()
 
     if "Time Series (5min)" in data:
+
         df = pd.DataFrame.from_dict(data['Time Series (5min)'], orient='index')
-        df.to_csv("GME_alpha_vantage_data.csv")
+        df.reset_index(inplace=True)
+        df.rename(columns={"index": "Date"}, inplace=True)
+        df.to_csv("GME_alpha_vantage_data.csv", index=False)
+        print("Columns in alpha:", df.columns)
         print("Alpha Vantage Data Collected")
         return df
     else:
