@@ -11,34 +11,37 @@ prices = gme_data['Close'].values.reshape(-1, 1)
 
 split_date = '2021-01-01'
 train_mask = dates < split_date
-test_mask  = dates >= split_date
+test_mask = dates >= split_date
 y_train = prices[train_mask]
-y_test  = prices[test_mask]
+y_test = prices[test_mask]
 
 scaler = StandardScaler()
 y_train_s = scaler.fit_transform(y_train)
-y_test_s  = scaler.transform(y_test)
+y_test_s = scaler.transform(y_test)
 
 window_size = 10
+
+
 def make_windows(data):
     X = []
     for i in range(len(data) - window_size):
-        X.append(data[i:i+window_size])
+        X.append(data[i:i + window_size])
     return np.array(X)
 
-X_train = make_windows(y_train_s)
-X_test  = make_windows(y_test_s)
 
-y_train_w = X_train[:, -1, 0].reshape(-1,1)
-y_test_w  = X_test[:,  -1, 0].reshape(-1,1)
+X_train = make_windows(y_train_s)
+X_test = make_windows(y_test_s)
+
+y_train_w = X_train[:, -1, 0].reshape(-1, 1)
+y_test_w = X_test[:, -1, 0].reshape(-1, 1)
 
 model = Sequential([
-    Flatten(input_shape=(window_size,1)),
+    Flatten(input_shape=(window_size, 1)),
     Dense(64, activation='relu'),
     Dense(32, activation='relu'),
     Dense(64, activation='relu'),
     Dense(window_size, activation='linear'),
-    Reshape((window_size,1)),
+    Reshape((window_size, 1)),
 ])
 model.compile(optimizer='adam', loss='mse')
 
@@ -49,13 +52,13 @@ history = model.fit(
 print(f"Final training loss: {history.history['loss'][-1]:.6f}")
 
 X_test_recon = model.predict(X_test)
-pred_scaled = X_test_recon[:, -1, 0].reshape(-1,1)
+pred_scaled = X_test_recon[:, -1, 0].reshape(-1, 1)
 pred = scaler.inverse_transform(pred_scaled)
 
 actual = y_test[window_size:]
 
 residuals = (actual.flatten() - pred.flatten())
-pct_dev   = np.abs(residuals) / actual.flatten()
+pct_dev = np.abs(residuals) / actual.flatten()
 
 thr_abs = 3 * np.std(residuals)
 thr_pct = 0.10
@@ -69,7 +72,7 @@ plot_indices = test_indices[window_size:]
 start, end = '2021-01-01', '2021-07-01'
 mask_plot = (dates >= start) & (dates <= end)
 
-plt.figure(figsize=(10,6))
+plt.figure(figsize=(10, 6))
 plt.plot(dates[mask_plot], prices[mask_plot], color='lightblue', label='Original Data', zorder=2)
 pred_dates = dates[plot_indices]
 pred_mask = (pred_dates >= start) & (pred_dates <= end)
